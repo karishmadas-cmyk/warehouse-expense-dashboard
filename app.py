@@ -85,15 +85,13 @@ if selected_cust:
 if selected_loc:
     filtered_df = filtered_df[filtered_df["Locations"].isin(selected_loc)]
 
-# Top KPI Metric Cards
+# Top KPI Metric Cards (3 Columns - Avg Expense Removed)
 total_exp = filtered_df["Total Expenses"].sum() if not filtered_df.empty else 0
-avg_exp = filtered_df["Total Expenses"].mean() if not filtered_df.empty else 0
 
-col_kpi1, col_kpi2, col_kpi3, col_kpi4 = st.columns(4)
+col_kpi1, col_kpi2, col_kpi3 = st.columns(3)
 col_kpi1.metric("Total Expense", format_inr(total_exp))
 col_kpi2.metric("Total Warehouses", filtered_df["Locations"].nunique())
 col_kpi3.metric("Total Customers", filtered_df["Customer"].nunique())
-col_kpi4.metric("Avg Expense / Line Item", format_inr(avg_exp))
 
 st.markdown("---")
 
