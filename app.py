@@ -67,21 +67,32 @@ else:
     col1, col2, col3 = st.columns(3)
 
     with col1:
-        st.subheader("Monthly Trend")
-        m_trend = (
-            filtered_df.groupby("Month_Str")["Total Expenses"]
-            .sum()
-            .reset_index()
-        )
-        fig1 = px.line(
-            m_trend,
-            x="Month_Str",
-            y="Total Expenses",
-            markers=True,
-            text=m_trend["Total Expenses"].apply(lambda x: f"₹{x/1e6:.1f}M"),
-        )
-        fig1.update_traces(textposition="top center")
-        st.plotly_chart(fig1, use_container_width=True)
+    st.subheader("Monthly Trend")
+    
+    # 1. Group by both actual Date (for sorting) and String (for label)
+    m_trend = (
+        filtered_df.groupby(["Month", "Month_Str"])["Total Expenses"]
+        .sum()
+        .reset_index()
+    )
+    
+    # 2. Sort chronologically by the actual Date column
+    m_trend = m_trend.sort_values("Month")
+
+    # 3. Create the chart
+    fig1 = px.line(
+        m_trend,
+        x="Month_Str",
+        y="Total Expenses",
+        markers=True,
+        text=m_trend["Total Expenses"].apply(lambda x: f"₹{x/1e6:.1f}M"),
+    )
+    
+    # 4. Force Plotly to keep the exact sorted order instead of auto-sorting alphabetically
+    fig1.update_xaxes(type="category")
+    fig1.update_traces(textposition="top center")
+    
+    st.plotly_chart(fig1, use_container_width=True)
 
     with col2:
         st.subheader("Expense by Category")
