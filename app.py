@@ -13,7 +13,8 @@ st.set_page_config(
 @st.cache_data
 def load_data():
     df = pd.read_excel("Monthly warehouse expenses.xlsx", header=1)
-    df["Month_Str"] = pd.to_datetime(df["Month"]).dt.strftime("%b %Y")
+    df["Month_Dt"] = pd.to_datetime(df["Month"])
+    df["Month_Str"] = df["Month_Dt"].dt.strftime("%b %Y")
     return df
 
 
@@ -33,8 +34,7 @@ selected_loc = st.sidebar.multiselect(
     "Select Warehouse Location", options=df["Locations"].unique()
 )
 
-# --- Dynamic Filter Logic ---
-# If a filter is left empty, it includes ALL options by default
+# Filter Logic (Defaults to ALL if left empty)
 filtered_df = df.copy()
 
 if selected_zone:
@@ -59,7 +59,6 @@ col_kpi4.metric("Avg Expense / Line Item", f"₹ {avg_exp / 1e5:.2f} L")
 
 st.markdown("---")
 
-# If no data matches the selected filters, show a friendly warning
 if filtered_df.empty:
     st.warning("⚠️ No data available for the selected combination of filters.")
 else:
@@ -67,32 +66,25 @@ else:
     col1, col2, col3 = st.columns(3)
 
     with col1:
-    st.subheader("Monthly Trend")
-    
-    # 1. Group by both actual Date (for sorting) and String (for label)
-    m_trend = (
-        filtered_df.groupby(["Month", "Month_Str"])["Total Expenses"]
-        .sum()
-        .reset_index()
-    )
-    
-    # 2. Sort chronologically by the actual Date column
-    m_trend = m_trend.sort_values("Month")
+        st.subheader("Monthly Trend")
+        # Group by date for chronological sorting
+        m_trend = (
+            filtered_df.groupby(["Month_Dt", "Month_Str"])["Total Expenses"]
+            .sum()
+            .reset_index()
+            .sort_values("Month_Dt")
+        )
 
-    # 3. Create the chart
-    fig1 = px.line(
-        m_trend,
-        x="Month_Str",
-        y="Total Expenses",
-        markers=True,
-        text=m_trend["Total Expenses"].apply(lambda x: f"₹{x/1e6:.1f}M"),
-    )
-    
-    # 4. Force Plotly to keep the exact sorted order instead of auto-sorting alphabetically
-    fig1.update_xaxes(type="category")
-    fig1.update_traces(textposition="top center")
-    
-    st.plotly_chart(fig1, use_container_width=True)
+        fig1 = px.line(
+            m_trend,
+            x="Month_Str",
+            y="Total Expenses",
+            markers=True,
+            text=m_trend["Total Expenses"].apply(lambda x: f"₹{x/1e6:.1f}M"),
+        )
+        fig1.update_xaxes(type="category")
+        fig1.update_traces(textposition="top center")
+        st.plotly_chart(fig1, use_container_width=True)
 
     with col2:
         st.subheader("Expense by Category")
@@ -143,7 +135,7 @@ else:
             .sort_values("Total Expenses", ascending=False)
             .head(7)
         )
-        fig4 = px.bar(
+        fig5_cust = px.bar(
             cust_sum,
             x="Total Expenses",
             y="Customer",
@@ -151,7 +143,7 @@ else:
             color="Total Expenses",
             color_continuous_scale="Purples",
         )
-        st.plotly_chart(fig4, use_container_width=True)
+        st.plotly_chart(fig5_cust, use_container_width=True)
 
     with col5:
         st.subheader("Top Warehouses by Expense")
@@ -162,7 +154,7 @@ else:
             .sort_values("Total Expenses", ascending=False)
             .head(7)
         )
-        fig5 = px.bar(
+        fig5_loc = px.bar(
             loc_sum,
             x="Total Expenses",
             y="Locations",
@@ -170,7 +162,7 @@ else:
             color="Total Expenses",
             color_continuous_scale="Oranges",
         )
-        st.plotly_chart(fig5, use_container_width=True)
+        st.plotly_chart(fig5_loc, use_container_width=True)
 
     # Data Table View
     with st.expander("📄 View Filtered Raw Data"):
