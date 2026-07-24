@@ -9,7 +9,7 @@ st.set_page_config(
 )
 
 
-# Helper function for Indian Numbering System
+# Helper function for Indian Currency Formatting
 def format_inr(val):
     if val >= 1e7:
         return f"₹{val/1e7:.2f} Cr"
@@ -26,7 +26,8 @@ def format_inr(val):
 def load_data():
     df = pd.read_excel("Monthly warehouse expenses.xlsx", header=1)
     df["Month_Dt"] = pd.to_datetime(df["Month"])
-    df["Month_Str"] = df["Month_Dt"].dt.strftime("%b %Y")
+    df["Month_Str"] = df["Month_Dt"].dt.strftime("%B")  # e.g., April, May
+    df["Year"] = df["Month_Dt"].dt.year
     return df
 
 
@@ -73,7 +74,7 @@ st.markdown("---")
 if filtered_df.empty:
     st.warning("⚠️ No data available for the selected combination of filters.")
 else:
-    # ------------------ ROW 1: 2-COLUMN GRID ------------------
+    # ------------------ ROW 1: Visualizations ------------------
     col1, col2 = st.columns([1.2, 1])
 
     with col1:
@@ -85,8 +86,6 @@ else:
             .sort_values("Month_Dt")
         )
         m_trend = m_trend[m_trend["Total Expenses"] > 0]
-
-        # Convert raw expenses to Crores for clean Y-axis display
         m_trend["Expense_Cr"] = m_trend["Total Expenses"] / 1e7
 
         fig1 = px.line(
@@ -124,7 +123,7 @@ else:
 
     st.markdown("---")
 
-    # ------------------ ROW 2: 2-COLUMN GRID ------------------
+    # ------------------ ROW 2: Bar Charts ------------------
     col3, col4 = st.columns([1, 1])
 
     with col3:
@@ -146,12 +145,9 @@ else:
         ]
         cat_sum = filtered_df[cat_cols].sum().reset_index()
         cat_sum.columns = ["Category", "Expense"]
-
         cat_sum = cat_sum[cat_sum["Expense"] > 0].sort_values(
             "Expense", ascending=True
         )
-
-        # Convert to Crores for clean X-axis display
         cat_sum["Expense_Cr"] = cat_sum["Expense"] / 1e7
 
         fig3 = px.bar(
@@ -178,8 +174,6 @@ else:
             .sort_values("Total Expenses", ascending=True)
             .tail(7)
         )
-
-        # Convert to Crores for clean X-axis display
         loc_sum["Expense_Cr"] = loc_sum["Total Expenses"] / 1e7
 
         fig4 = px.bar(
@@ -197,6 +191,30 @@ else:
         )
         st.plotly_chart(fig4, use_container_width=True)
 
-    # Raw Data View
-    with st.expander("📄 View Detailed Table"):
+    st.markdown("---")
+
+    # ------------------ ROW 3: EXPENSE DETAIL TABLE ------------------
+    st.subheader("📋 EXPENSE DETAIL SUMMARY")
+
+    detail_df = (
+        filtered_df.groupby(["Customer", "Locations", "Year", "Month_Str"])[
+            "Total Expenses"
+        ]
+        .sum()
+        .reset_index()
+        .sort_values(by="Total Expenses", ascending=False)
+    )
+
+    detail_df.columns = ["Customer", "Locations", "Year", "Month", "Total Expense"]
+
+    # Format numbers into readable currency standard
+    formatted_detail_df = detail_df.copy()
+    formatted_detail_df["Total Expense"] = formatted_detail_df[
+        "Total Expense"
+    ].apply(lambda x: f"₹ {x:,.0f}")
+
+    st.dataframe(formatted_detail_df, use_container_width=True, height=280)
+
+    # Detailed Full Dataset View
+    with st.expander("📄 View Full Line-Item Data Table"):
         st.dataframe(filtered_df, use_container_width=True)
