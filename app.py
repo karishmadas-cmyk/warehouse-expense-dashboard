@@ -37,7 +37,7 @@ df = load_data()
 st.title("🏭 Warehouse Operational Expense Dashboard FY 2026-27")
 st.markdown("---")
 
-# Sidebar Filters
+# Sidebar Filters & Manual Refresh
 st.sidebar.header("🔍 Filter Options")
 selected_zone = st.sidebar.multiselect("Select Zone", options=df["Zone"].unique())
 selected_cust = st.sidebar.multiselect(
@@ -46,6 +46,11 @@ selected_cust = st.sidebar.multiselect(
 selected_loc = st.sidebar.multiselect(
     "Select Warehouse Location", options=df["Locations"].unique()
 )
+
+st.sidebar.markdown("---")
+if st.sidebar.button("🔄 Refresh Data"):
+    st.cache_data.clear()
+    st.rerun()
 
 # Dynamic Filter Logic
 filtered_df = df.copy()
@@ -74,7 +79,7 @@ st.markdown("---")
 if filtered_df.empty:
     st.warning("⚠️ No data available for the selected combination of filters.")
 else:
-    # ------------------ ROW 1: Visualizations ------------------
+    # ------------------ ROW 1: Monthly Trend & Zone ------------------
     col1, col2 = st.columns([1.2, 1])
 
     with col1:
@@ -123,7 +128,7 @@ else:
 
     st.markdown("---")
 
-    # ------------------ ROW 2: Bar Charts ------------------
+    # ------------------ ROW 2: Categories & Customers ------------------
     col3, col4 = st.columns([1, 1])
 
     with col3:
@@ -161,11 +166,42 @@ else:
         fig3.update_xaxes(title_text="Expense (₹ Cr)", ticksuffix=" Cr")
         fig3.update_traces(textposition="outside")
         fig3.update_layout(
-            height=400, yaxis_title="", margin=dict(l=20, r=20, t=30, b=20)
+            height=380, yaxis_title="", margin=dict(l=20, r=20, t=30, b=20)
         )
         st.plotly_chart(fig3, use_container_width=True)
 
     with col4:
+        st.subheader("👥 Top Customers by Expense")
+        cust_sum = (
+            filtered_df.groupby("Customer")["Total Expenses"]
+            .sum()
+            .reset_index()
+            .sort_values("Total Expenses", ascending=True)
+            .tail(7)
+        )
+        cust_sum["Expense_Cr"] = cust_sum["Total Expenses"] / 1e7
+
+        fig4 = px.bar(
+            cust_sum,
+            x="Expense_Cr",
+            y="Customer",
+            orientation="h",
+            color_discrete_sequence=["#6B2D5C"],
+            text=cust_sum["Total Expenses"].apply(lambda x: f" {format_inr(x)}"),
+        )
+        fig4.update_xaxes(title_text="Expense (₹ Cr)", ticksuffix=" Cr")
+        fig4.update_traces(textposition="outside")
+        fig4.update_layout(
+            height=380, yaxis_title="", margin=dict(l=20, r=20, t=30, b=20)
+        )
+        st.plotly_chart(fig4, use_container_width=True)
+
+    st.markdown("---")
+
+    # ------------------ ROW 3: Warehouses & Detail Table ------------------
+    col5, col6 = st.columns([1, 1])
+
+    with col5:
         st.subheader("🏬 Top Warehouses by Expense")
         loc_sum = (
             filtered_df.groupby("Locations")["Total Expenses"]
@@ -176,7 +212,7 @@ else:
         )
         loc_sum["Expense_Cr"] = loc_sum["Total Expenses"] / 1e7
 
-        fig4 = px.bar(
+        fig5 = px.bar(
             loc_sum,
             x="Expense_Cr",
             y="Locations",
@@ -184,36 +220,37 @@ else:
             color_discrete_sequence=["#2B579A"],
             text=loc_sum["Total Expenses"].apply(lambda x: f" {format_inr(x)}"),
         )
-        fig4.update_xaxes(title_text="Expense (₹ Cr)", ticksuffix=" Cr")
-        fig4.update_traces(textposition="outside")
-        fig4.update_layout(
-            height=400, yaxis_title="", margin=dict(l=20, r=20, t=30, b=20)
+        fig5.update_xaxes(title_text="Expense (₹ Cr)", ticksuffix=" Cr")
+        fig5.update_traces(textposition="outside")
+        fig5.update_layout(
+            height=380, yaxis_title="", margin=dict(l=20, r=20, t=30, b=20)
         )
-        st.plotly_chart(fig4, use_container_width=True)
+        st.plotly_chart(fig5, use_container_width=True)
 
-    st.markdown("---")
-
-    # ------------------ ROW 3: EXPENSE DETAIL TABLE ------------------
-    st.subheader("📋 EXPENSE DETAIL SUMMARY")
-
-    detail_df = (
-        filtered_df.groupby(["Customer", "Locations", "Year", "Month_Str"])[
-            "Total Expenses"
+    with col6:
+        st.subheader("📋 EXPENSE DETAIL SUMMARY")
+        detail_df = (
+            filtered_df.groupby(["Customer", "Locations", "Year", "Month_Str"])[
+                "Total Expenses"
+            ]
+            .sum()
+            .reset_index()
+            .sort_values(by="Total Expenses", ascending=False)
+        )
+        detail_df.columns = [
+            "Customer",
+            "Locations",
+            "Year",
+            "Month",
+            "Total Expense",
         ]
-        .sum()
-        .reset_index()
-        .sort_values(by="Total Expenses", ascending=False)
-    )
 
-    detail_df.columns = ["Customer", "Locations", "Year", "Month", "Total Expense"]
+        formatted_detail_df = detail_df.copy()
+        formatted_detail_df["Total Expense"] = formatted_detail_df[
+            "Total Expense"
+        ].apply(lambda x: f"₹ {x:,.0f}")
 
-    # Format numbers into readable currency standard
-    formatted_detail_df = detail_df.copy()
-    formatted_detail_df["Total Expense"] = formatted_detail_df[
-        "Total Expense"
-    ].apply(lambda x: f"₹ {x:,.0f}")
-
-    st.dataframe(formatted_detail_df, use_container_width=True, height=280)
+        st.dataframe(formatted_detail_df, use_container_width=True, height=310)
 
     # Detailed Full Dataset View
     with st.expander("📄 View Full Line-Item Data Table"):
