@@ -9,6 +9,18 @@ st.set_page_config(
 )
 
 
+# Helper function for Indian Numbering System
+def format_inr(val):
+    if val >= 1e7:
+        return f"₹{val/1e7:.2f} Cr"
+    elif val >= 1e5:
+        return f"₹{val/1e5:.2f} L"
+    elif val >= 1e3:
+        return f"₹{val/1e3:.1f} K"
+    else:
+        return f"₹{val:.0f}"
+
+
 # Load Data
 @st.cache_data
 def load_data():
@@ -51,22 +63,21 @@ total_exp = filtered_df["Total Expenses"].sum() if not filtered_df.empty else 0
 avg_exp = filtered_df["Total Expenses"].mean() if not filtered_df.empty else 0
 
 col_kpi1, col_kpi2, col_kpi3, col_kpi4 = st.columns(4)
-col_kpi1.metric("Total Expense", f"₹ {total_exp / 1e7:.2f} Cr")
+col_kpi1.metric("Total Expense", format_inr(total_exp))
 col_kpi2.metric("Total Warehouses", filtered_df["Locations"].nunique())
 col_kpi3.metric("Total Customers", filtered_df["Customer"].nunique())
-col_kpi4.metric("Avg Expense / Line Item", f"₹ {avg_exp / 1e5:.2f} L")
+col_kpi4.metric("Avg Expense / Line Item", format_inr(avg_exp))
 
 st.markdown("---")
 
 if filtered_df.empty:
     st.warning("⚠️ No data available for the selected combination of filters.")
 else:
-    # ------------------ ROW 1: SPACIOUS 2-COLUMN GRID ------------------
+    # ------------------ ROW 1: 2-COLUMN GRID ------------------
     col1, col2 = st.columns([1.2, 1])
 
     with col1:
         st.subheader("📈 Monthly Expense Trend")
-        # Filter out months with 0 expenses to avoid steep crashes to zero
         m_trend = (
             filtered_df.groupby(["Month_Dt", "Month_Str"])["Total Expenses"]
             .sum()
@@ -80,10 +91,10 @@ else:
             x="Month_Str",
             y="Total Expenses",
             markers=True,
-            text=m_trend["Total Expenses"].apply(lambda x: f"₹{x/1e6:.2f}M"),
+            text=m_trend["Total Expenses"].apply(format_inr),
         )
         fig1.update_xaxes(type="category", title_text="")
-        fig1.update_yaxes(title_text="Total Expense (₹)")
+        fig1.update_yaxes(title_text="Total Expense")
         fig1.update_traces(
             textposition="top center", line=dict(width=3, color="#0078D4")
         )
@@ -104,16 +115,14 @@ else:
         )
         fig2.update_traces(textinfo="percent+label")
         fig2.update_layout(
-            height=350,
-            showlegend=False,
-            margin=dict(l=20, r=20, t=30, b=20),
+            height=350, showlegend=False, margin=dict(l=20, r=20, t=30, b=20)
         )
         st.plotly_chart(fig2, use_container_width=True)
 
     st.markdown("---")
 
-    # ------------------ ROW 2: SPACIOUS 2-COLUMN GRID ------------------
-    col3, col4 = st.columns([1.1, 1])
+    # ------------------ ROW 2: 2-COLUMN GRID ------------------
+    col3, col4 = st.columns([1, 1])
 
     with col3:
         st.subheader("📊 Top Expense Categories")
@@ -135,7 +144,6 @@ else:
         cat_sum = filtered_df[cat_cols].sum().reset_index()
         cat_sum.columns = ["Category", "Expense"]
 
-        # Only display non-zero categories sorted highest to lowest
         cat_sum = cat_sum[cat_sum["Expense"] > 0].sort_values(
             "Expense", ascending=True
         )
@@ -146,12 +154,12 @@ else:
             y="Category",
             orientation="h",
             color_discrete_sequence=["#0078D4"],
-            text=cat_sum["Expense"].apply(lambda x: f" ₹{x/1e6:.2f}M"),
+            text=cat_sum["Expense"].apply(lambda x: f" {format_inr(x)}"),
         )
         fig3.update_traces(textposition="outside")
         fig3.update_layout(
-            height=380,
-            xaxis_title="Expense (₹)",
+            height=400,
+            xaxis_title="",
             yaxis_title="",
             margin=dict(l=20, r=20, t=30, b=20),
         )
@@ -173,12 +181,12 @@ else:
             y="Locations",
             orientation="h",
             color_discrete_sequence=["#2B579A"],
-            text=loc_sum["Total Expenses"].apply(lambda x: f" ₹{x/1e6:.2f}M"),
+            text=loc_sum["Total Expenses"].apply(lambda x: f" {format_inr(x)}"),
         )
         fig4.update_traces(textposition="outside")
         fig4.update_layout(
-            height=380,
-            xaxis_title="Expense (₹)",
+            height=400,
+            xaxis_title="",
             yaxis_title="",
             margin=dict(l=20, r=20, t=30, b=20),
         )
