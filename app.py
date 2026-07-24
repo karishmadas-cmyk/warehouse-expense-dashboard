@@ -39,6 +39,21 @@ st.markdown("---")
 
 # Sidebar Filters & Manual Refresh
 st.sidebar.header("🔍 Filter Options")
+
+# Year & Month Filters
+selected_year = st.sidebar.multiselect("Select Year", options=sorted(df["Year"].dropna().unique()))
+
+# Filter available month options dynamically based on selected year (if any)
+available_months = (
+    df[df["Year"].isin(selected_year)]["Month_Str"].unique()
+    if selected_year
+    else df["Month_Str"].unique()
+)
+selected_month = st.sidebar.multiselect("Select Month", options=available_months)
+
+st.sidebar.markdown("---")
+
+# Additional Filters
 selected_zone = st.sidebar.multiselect("Select Zone", options=df["Zone"].unique())
 selected_cust = st.sidebar.multiselect(
     "Select Customer", options=df["Customer"].unique()
@@ -54,6 +69,12 @@ if st.sidebar.button("🔄 Refresh Data"):
 
 # Dynamic Filter Logic
 filtered_df = df.copy()
+
+if selected_year:
+    filtered_df = filtered_df[filtered_df["Year"].isin(selected_year)]
+
+if selected_month:
+    filtered_df = filtered_df[filtered_df["Month_Str"].isin(selected_month)]
 
 if selected_zone:
     filtered_df = filtered_df[filtered_df["Zone"].isin(selected_zone)]
