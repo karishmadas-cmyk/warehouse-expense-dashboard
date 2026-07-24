@@ -21,7 +21,7 @@ def load_data():
 df = load_data()
 
 # App Header
-st.title("🏭 WAREHOUSE OPERATIONAL EXPENSE DASHBOARD FY 2026-27")
+st.title("🏭 Warehouse Operational Expense Dashboard FY 2026-27")
 st.markdown("---")
 
 # Sidebar Filters
@@ -34,7 +34,7 @@ selected_loc = st.sidebar.multiselect(
     "Select Warehouse Location", options=df["Locations"].unique()
 )
 
-# Filter Logic (Defaults to ALL if left empty)
+# Dynamic Filter Logic
 filtered_df = df.copy()
 
 if selected_zone:
@@ -51,7 +51,6 @@ total_exp = filtered_df["Total Expenses"].sum() if not filtered_df.empty else 0
 avg_exp = filtered_df["Total Expenses"].mean() if not filtered_df.empty else 0
 
 col_kpi1, col_kpi2, col_kpi3, col_kpi4 = st.columns(4)
-
 col_kpi1.metric("Total Expense", f"₹ {total_exp / 1e7:.2f} Cr")
 col_kpi2.metric("Total Warehouses", filtered_df["Locations"].nunique())
 col_kpi3.metric("Total Customers", filtered_df["Customer"].nunique())
@@ -62,32 +61,62 @@ st.markdown("---")
 if filtered_df.empty:
     st.warning("⚠️ No data available for the selected combination of filters.")
 else:
-    # Visualizations - Row 1
-    col1, col2, col3 = st.columns(3)
+    # ------------------ ROW 1: SPACIOUS 2-COLUMN GRID ------------------
+    col1, col2 = st.columns([1.2, 1])
 
     with col1:
-        st.subheader("Monthly Trend")
-        # Group by date for chronological sorting
+        st.subheader("📈 Monthly Expense Trend")
+        # Filter out months with 0 expenses to avoid steep crashes to zero
         m_trend = (
             filtered_df.groupby(["Month_Dt", "Month_Str"])["Total Expenses"]
             .sum()
             .reset_index()
             .sort_values("Month_Dt")
         )
+        m_trend = m_trend[m_trend["Total Expenses"] > 0]
 
         fig1 = px.line(
             m_trend,
             x="Month_Str",
             y="Total Expenses",
             markers=True,
-            text=m_trend["Total Expenses"].apply(lambda x: f"₹{x/1e6:.1f}M"),
+            text=m_trend["Total Expenses"].apply(lambda x: f"₹{x/1e6:.2f}M"),
         )
-        fig1.update_xaxes(type="category")
-        fig1.update_traces(textposition="top center")
+        fig1.update_xaxes(type="category", title_text="")
+        fig1.update_yaxes(title_text="Total Expense (₹)")
+        fig1.update_traces(
+            textposition="top center", line=dict(width=3, color="#0078D4")
+        )
+        fig1.update_layout(height=350, margin=dict(l=20, r=20, t=30, b=20))
         st.plotly_chart(fig1, use_container_width=True)
 
     with col2:
-        st.subheader("Expense by Category")
+        st.subheader("🌍 Expense Distribution by Zone")
+        z_sum = (
+            filtered_df.groupby("Zone")["Total Expenses"].sum().reset_index()
+        )
+        fig2 = px.pie(
+            z_sum,
+            values="Total Expenses",
+            names="Zone",
+            hole=0.45,
+            color_discrete_sequence=px.colors.qualitative.Set2,
+        )
+        fig2.update_traces(textinfo="percent+label")
+        fig2.update_layout(
+            height=350,
+            showlegend=False,
+            margin=dict(l=20, r=20, t=30, b=20),
+        )
+        st.plotly_chart(fig2, use_container_width=True)
+
+    st.markdown("---")
+
+    # ------------------ ROW 2: SPACIOUS 2-COLUMN GRID ------------------
+    col3, col4 = st.columns([1.1, 1])
+
+    with col3:
+        st.subheader("📊 Top Expense Categories")
         cat_cols = [
             "Manpower Outsource",
             "Security Outsource",
@@ -105,65 +134,56 @@ else:
         ]
         cat_sum = filtered_df[cat_cols].sum().reset_index()
         cat_sum.columns = ["Category", "Expense"]
-        fig2 = px.bar(
-            cat_sum.sort_values("Expense", ascending=True),
+
+        # Only display non-zero categories sorted highest to lowest
+        cat_sum = cat_sum[cat_sum["Expense"] > 0].sort_values(
+            "Expense", ascending=True
+        )
+
+        fig3 = px.bar(
+            cat_sum,
             x="Expense",
             y="Category",
             orientation="h",
-            color="Expense",
-            color_continuous_scale="Blues",
+            color_discrete_sequence=["#0078D4"],
+            text=cat_sum["Expense"].apply(lambda x: f" ₹{x/1e6:.2f}M"),
         )
-        st.plotly_chart(fig2, use_container_width=True)
-
-    with col3:
-        st.subheader("Expense by Zone")
-        z_sum = (
-            filtered_df.groupby("Zone")["Total Expenses"].sum().reset_index()
+        fig3.update_traces(textposition="outside")
+        fig3.update_layout(
+            height=380,
+            xaxis_title="Expense (₹)",
+            yaxis_title="",
+            margin=dict(l=20, r=20, t=30, b=20),
         )
-        fig3 = px.pie(z_sum, values="Total Expenses", names="Zone", hole=0.45)
         st.plotly_chart(fig3, use_container_width=True)
 
-    # Visualizations - Row 2
-    col4, col5 = st.columns(2)
-
     with col4:
-        st.subheader("Top Customers by Expense")
-        cust_sum = (
-            filtered_df.groupby("Customer")["Total Expenses"]
-            .sum()
-            .reset_index()
-            .sort_values("Total Expenses", ascending=False)
-            .head(7)
-        )
-        fig5_cust = px.bar(
-            cust_sum,
-            x="Total Expenses",
-            y="Customer",
-            orientation="h",
-            color="Total Expenses",
-            color_continuous_scale="Purples",
-        )
-        st.plotly_chart(fig5_cust, use_container_width=True)
-
-    with col5:
-        st.subheader("Top Warehouses by Expense")
+        st.subheader("🏬 Top Warehouses by Expense")
         loc_sum = (
             filtered_df.groupby("Locations")["Total Expenses"]
             .sum()
             .reset_index()
-            .sort_values("Total Expenses", ascending=False)
-            .head(7)
+            .sort_values("Total Expenses", ascending=True)
+            .tail(7)
         )
-        fig5_loc = px.bar(
+
+        fig4 = px.bar(
             loc_sum,
             x="Total Expenses",
             y="Locations",
             orientation="h",
-            color="Total Expenses",
-            color_continuous_scale="Oranges",
+            color_discrete_sequence=["#2B579A"],
+            text=loc_sum["Total Expenses"].apply(lambda x: f" ₹{x/1e6:.2f}M"),
         )
-        st.plotly_chart(fig5_loc, use_container_width=True)
+        fig4.update_traces(textposition="outside")
+        fig4.update_layout(
+            height=380,
+            xaxis_title="Expense (₹)",
+            yaxis_title="",
+            margin=dict(l=20, r=20, t=30, b=20),
+        )
+        st.plotly_chart(fig4, use_container_width=True)
 
-    # Data Table View
-    with st.expander("📄 View Filtered Raw Data"):
+    # Raw Data View
+    with st.expander("📄 View Detailed Table"):
         st.dataframe(filtered_df, use_container_width=True)
