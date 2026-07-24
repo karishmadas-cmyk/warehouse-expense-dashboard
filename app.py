@@ -86,15 +86,18 @@ else:
         )
         m_trend = m_trend[m_trend["Total Expenses"] > 0]
 
+        # Convert raw expenses to Crores for clean Y-axis display
+        m_trend["Expense_Cr"] = m_trend["Total Expenses"] / 1e7
+
         fig1 = px.line(
             m_trend,
             x="Month_Str",
-            y="Total Expenses",
+            y="Expense_Cr",
             markers=True,
             text=m_trend["Total Expenses"].apply(format_inr),
         )
         fig1.update_xaxes(type="category", title_text="")
-        fig1.update_yaxes(title_text="Total Expense")
+        fig1.update_yaxes(title_text="Expense (₹ Cr)", ticksuffix=" Cr")
         fig1.update_traces(
             textposition="top center", line=dict(width=3, color="#0078D4")
         )
@@ -148,20 +151,21 @@ else:
             "Expense", ascending=True
         )
 
+        # Convert to Crores for clean X-axis display
+        cat_sum["Expense_Cr"] = cat_sum["Expense"] / 1e7
+
         fig3 = px.bar(
             cat_sum,
-            x="Expense",
+            x="Expense_Cr",
             y="Category",
             orientation="h",
             color_discrete_sequence=["#0078D4"],
             text=cat_sum["Expense"].apply(lambda x: f" {format_inr(x)}"),
         )
+        fig3.update_xaxes(title_text="Expense (₹ Cr)", ticksuffix=" Cr")
         fig3.update_traces(textposition="outside")
         fig3.update_layout(
-            height=400,
-            xaxis_title="",
-            yaxis_title="",
-            margin=dict(l=20, r=20, t=30, b=20),
+            height=400, yaxis_title="", margin=dict(l=20, r=20, t=30, b=20)
         )
         st.plotly_chart(fig3, use_container_width=True)
 
@@ -175,20 +179,21 @@ else:
             .tail(7)
         )
 
+        # Convert to Crores for clean X-axis display
+        loc_sum["Expense_Cr"] = loc_sum["Total Expenses"] / 1e7
+
         fig4 = px.bar(
             loc_sum,
-            x="Total Expenses",
+            x="Expense_Cr",
             y="Locations",
             orientation="h",
             color_discrete_sequence=["#2B579A"],
             text=loc_sum["Total Expenses"].apply(lambda x: f" {format_inr(x)}"),
         )
+        fig4.update_xaxes(title_text="Expense (₹ Cr)", ticksuffix=" Cr")
         fig4.update_traces(textposition="outside")
         fig4.update_layout(
-            height=400,
-            xaxis_title="",
-            yaxis_title="",
-            margin=dict(l=20, r=20, t=30, b=20),
+            height=400, yaxis_title="", margin=dict(l=20, r=20, t=30, b=20)
         )
         st.plotly_chart(fig4, use_container_width=True)
 
