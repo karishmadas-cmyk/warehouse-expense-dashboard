@@ -1,4 +1,3 @@
-import base64
 import pandas as pd
 import plotly.express as px
 import streamlit as st
@@ -42,12 +41,6 @@ def format_inr(val):
         return f"₹{val:.0f}"
 
 
-# Helper function to encode image to base64 for HTML display
-def get_image_base64(path):
-    with open(path, "rb") as image_file:
-        return base64.b64encode(image_file.read()).decode()
-
-
 # Load Data
 @st.cache_data
 def load_data():
@@ -60,21 +53,17 @@ def load_data():
 
 df = load_data()
 
-# ------------------ APP HEADER WITH LOGO (TOP LEFT INLINE) ------------------
-try:
-    logo_b64 = get_image_base64("Logo.png")
-    st.markdown(
-        f"""
-        <div style="display: flex; align-items: flex-start; gap: 15px; margin-bottom: 10px;">
-            <img src="data:image/png;base64,{logo_b64}" style="height: 42px; margin-top: 4px; object-fit: contain;">
-            <h1 style="margin: 0; padding: 0; font-size: 2.2rem; font-weight: 700; line-height: 1.2;">
-                Warehouse Operational Expense Dashboard FY 2026-27
-            </h1>
-        </div>
-        """,
-        unsafe_allow_html=True
-    )
-except Exception:
+# ------------------ APP HEADER WITH CRISP LOGO ------------------
+col_logo, col_title = st.columns([0.10, 0.90])
+
+with col_logo:
+    try:
+        logo_img = Image.open("Logo.png")
+        st.image(logo_img, width=180)  # Sharper display size
+    except FileNotFoundError:
+        st.warning("Logo.png not found")
+
+with col_title:
     st.title("Warehouse Operational Expense Dashboard FY 2026-27")
 
 st.markdown("---")
