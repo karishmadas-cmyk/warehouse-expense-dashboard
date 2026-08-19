@@ -1,6 +1,7 @@
 import pandas as pd
 import plotly.express as px
 import streamlit as st
+from PIL import Image
 
 # Set Page Title & Layout
 st.set_page_config(
@@ -10,21 +11,21 @@ st.set_page_config(
 
 # -----------------------------------------------------------------------------
 # MONTHLY BUDGET CONFIGURATION (In INR)
-# Adjust these values to match your target budget per month
+# Note: Values use e7 notation (e.g., 7.14e7 = ₹7.14 Cr)
 # -----------------------------------------------------------------------------
 MONTHLY_BUDGETS = {
-    "April": 7.14e7,      # ₹7.14 Cr
-    "May": 6.84e7,        # ₹6.84 Cr
-    "June": 7.13e7,       # ₹7.13 Cr
-    "July": 7.48e7,       # ₹7.48 Cr
-    "August": 7.45e7,     # ₹7.45 Cr
-    "September": 7.48e7,  # ₹7.48 Cr
-    "October": 7.98e7,    # ₹7.98 Cr
-    "November": 7.89e7,   # ₹7.89 Cr
-    "December": 8.48e7,   # ₹8.48 Cr
-    "January": 8.73e7,    # ₹8.73 Cr
-    "February": 8.82e7,   # ₹8.82 Cr
-    "March": 9.68e7       # ₹9.68 Cr
+    "April": 7.14e7,     # ₹7.14 Cr
+    "May": 1.4e7,        # ₹1.40 Cr
+    "June": 1.6e7,       # ₹1.60 Cr
+    "July": 1.5e7,       # ₹1.50 Cr
+    "August": 1.5e7,     # ₹1.50 Cr
+    "September": 1.7e7,  # ₹1.70 Cr
+    "October": 1.8e7,    # ₹1.80 Cr
+    "November": 1.5e7,   # ₹1.50 Cr
+    "December": 1.6e7,   # ₹1.60 Cr
+    "January": 1.5e7,    # ₹1.50 Cr
+    "February": 1.4e7,   # ₹1.40 Cr
+    "March": 1.5e7       # ₹1.50 Cr
 }
 
 
@@ -52,11 +53,22 @@ def load_data():
 
 df = load_data()
 
-# App Header
-st.title("🏭 Warehouse Operational Expense Dashboard FY 2026-27")
+# ------------------ APP HEADER WITH LOGO ------------------
+col_logo, col_title = st.columns([0.15, 0.85])
+
+with col_logo:
+    try:
+        logo_img = Image.open("Logo.png")
+        st.image(logo_img, width=120)
+    except FileNotFoundError:
+        st.warning("Logo.png not found")
+
+with col_title:
+    st.title("Warehouse Operational Expense Dashboard FY 2026-27")
+
 st.markdown("---")
 
-# Sidebar Filters & Manual Refresh
+# ------------------ SIDEBAR FILTERS ------------------
 st.sidebar.header("🔍 Filter Options")
 
 # Year & Month Filters
@@ -107,23 +119,22 @@ if selected_loc:
 # ------------------ TOP KPI METRIC CARDS ------------------
 total_exp = filtered_df["Total Expenses"].sum() if not filtered_df.empty else 0
 
-# Dynamic Budget Calculation based on Selected Month Filter
+# Dynamic Budget Calculation based on Selected Months
 if selected_month:
     target_budget = sum(MONTHLY_BUDGETS.get(m, 0) for m in selected_month)
 else:
-    # If no month is selected, compute target budget based on visible/filtered data months
     active_months = filtered_df["Month_Str"].unique() if not filtered_df.empty else MONTHLY_BUDGETS.keys()
     target_budget = sum(MONTHLY_BUDGETS.get(m, 0) for m in active_months)
 
-# Budget Variance & Color Logic
+# Budget Variance Calculation
 expense_diff = total_exp - target_budget
 
 if expense_diff > 0:
     delta_text = f"▲ {format_inr(abs(expense_diff))} Above Budget"
-    delta_color_style = "#d9383a"  # Red for Above Budget
+    delta_color_style = "#d9383a"  # Red
 else:
     delta_text = f"▼ {format_inr(abs(expense_diff))} Below Budget"
-    delta_color_style = "#28a745"  # Green for Below Budget
+    delta_color_style = "#28a745"  # Green
 
 col_kpi1, col_kpi2, col_kpi3 = st.columns(3)
 
