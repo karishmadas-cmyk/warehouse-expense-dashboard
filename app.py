@@ -53,13 +53,13 @@ def load_data():
 
 df = load_data()
 
-# ------------------ APP HEADER WITH LOGO ------------------
-col_logo, col_title = st.columns([0.15, 0.85])
+# ------------------ APP HEADER WITH CRISP LOGO ------------------
+col_logo, col_title = st.columns([0.10, 0.90])
 
 with col_logo:
     try:
         logo_img = Image.open("Logo.png")
-        st.image(logo_img, width=120)
+        st.image(logo_img, width=180)  # Sharper display size
     except FileNotFoundError:
         st.warning("Logo.png not found")
 
@@ -74,7 +74,7 @@ st.sidebar.header("🔍 Filter Options")
 # Year & Month Filters
 selected_year = st.sidebar.multiselect("Select Year", options=sorted(df["Year"].dropna().unique()))
 
-# Filter available month options dynamically based on selected year (if any)
+# Filter available month options dynamically based on selected year
 available_months = (
     df[df["Year"].isin(selected_year)]["Month_Str"].unique()
     if selected_year
