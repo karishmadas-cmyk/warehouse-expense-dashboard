@@ -53,22 +53,17 @@ def load_data():
 
 df = load_data()
 
-# ------------------ APP HEADER WITH CRISP LOGO ------------------
-col_logo, col_title = st.columns([0.10, 0.90])
-
-with col_logo:
-    try:
-        logo_img = Image.open("Logo.png")
-        st.image(logo_img, width=180)  # Sharper display size
-    except FileNotFoundError:
-        st.warning("Logo.png not found")
-
-with col_title:
-    st.title("Warehouse Operational Expense Dashboard FY 2026-27")
-
+# ------------------ APP HEADER (CLEAN MAIN TITLE) ------------------
+st.title("Warehouse Operational Expense Dashboard FY 2026-27")
 st.markdown("---")
 
-# ------------------ SIDEBAR FILTERS ------------------
+# ------------------ SIDEBAR WITH LOGO AT TOP ------------------
+try:
+    logo_img = Image.open("Logo.png")
+    st.sidebar.image(logo_img, use_container_width=True)
+except Exception:
+    pass
+
 st.sidebar.header("🔍 Filter Options")
 
 # Year & Month Filters
