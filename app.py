@@ -13,18 +13,18 @@ st.set_page_config(
 # Adjust these values to match your target budget per month
 # -----------------------------------------------------------------------------
 MONTHLY_BUDGETS = {
-    "April": 1.5e7,      # ₹7.14 Cr
-    "May": 1.4e7,        # ₹6.84 Cr
-    "June": 1.6e7,       # ₹7.13 Cr
-    "July": 1.5e7,       # ₹7.48 Cr
-    "August": 1.5e7,     # ₹7.45 Cr
-    "September": 1.7e7,  # ₹7.48 Cr
-    "October": 1.8e7,    # ₹7.98 Cr
-    "November": 1.5e7,   # ₹7.89 Cr
-    "December": 1.6e7,   # ₹8.48 Cr
-    "January": 1.5e7,    # ₹8.73 Cr
-    "February": 1.4e7,   # ₹8.82 Cr
-    "March": 1.5e7       # ₹9.68 Cr
+    "April": 7.14e7,      # ₹7.14 Cr
+    "May": 6.847,        # ₹6.84 Cr
+    "June": 7.13e7,       # ₹7.13 Cr
+    "July": 7.48e7,       # ₹7.48 Cr
+    "August": 7.45e7,     # ₹7.45 Cr
+    "September": 7.48e7,  # ₹7.48 Cr
+    "October": 7.98e7,    # ₹7.98 Cr
+    "November": 7.89e7,   # ₹7.89 Cr
+    "December": 8.48e7,   # ₹8.48 Cr
+    "January": 8.73e7,    # ₹8.73 Cr
+    "February": 8.82e7,   # ₹8.82 Cr
+    "March": 9.68e7       # ₹9.68 Cr
 }
 
 
