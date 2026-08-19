@@ -8,6 +8,25 @@ st.set_page_config(
     layout="wide",
 )
 
+# -----------------------------------------------------------------------------
+# MONTHLY BUDGET CONFIGURATION (In INR)
+# Adjust these values to match your target budget per month
+# -----------------------------------------------------------------------------
+MONTHLY_BUDGETS = {
+    "April": 1.5e7,      # ₹7.14 Cr
+    "May": 1.4e7,        # ₹6.84 Cr
+    "June": 1.6e7,       # ₹7.13 Cr
+    "July": 1.5e7,       # ₹7.48 Cr
+    "August": 1.5e7,     # ₹7.45 Cr
+    "September": 1.7e7,  # ₹7.48 Cr
+    "October": 1.8e7,    # ₹7.98 Cr
+    "November": 1.5e7,   # ₹7.89 Cr
+    "December": 1.6e7,   # ₹8.48 Cr
+    "January": 1.5e7,    # ₹8.73 Cr
+    "February": 1.4e7,   # ₹8.82 Cr
+    "March": 1.5e7       # ₹9.68 Cr
+}
+
 
 # Helper function for Indian Currency Formatting
 def format_inr(val):
@@ -85,13 +104,45 @@ if selected_cust:
 if selected_loc:
     filtered_df = filtered_df[filtered_df["Locations"].isin(selected_loc)]
 
-# Top KPI Metric Cards (3 Columns - Avg Expense Removed)
+# ------------------ TOP KPI METRIC CARDS ------------------
 total_exp = filtered_df["Total Expenses"].sum() if not filtered_df.empty else 0
 
+# Dynamic Budget Calculation based on Selected Month Filter
+if selected_month:
+    target_budget = sum(MONTHLY_BUDGETS.get(m, 0) for m in selected_month)
+else:
+    # If no month is selected, compute target budget based on visible/filtered data months
+    active_months = filtered_df["Month_Str"].unique() if not filtered_df.empty else MONTHLY_BUDGETS.keys()
+    target_budget = sum(MONTHLY_BUDGETS.get(m, 0) for m in active_months)
+
+# Budget Variance & Color Logic
+expense_diff = total_exp - target_budget
+
+if expense_diff > 0:
+    delta_text = f"▲ {format_inr(abs(expense_diff))} Above Budget"
+    delta_color_style = "#d9383a"  # Red for Above Budget
+else:
+    delta_text = f"▼ {format_inr(abs(expense_diff))} Below Budget"
+    delta_color_style = "#28a745"  # Green for Below Budget
+
 col_kpi1, col_kpi2, col_kpi3 = st.columns(3)
-col_kpi1.metric("Total Expense", format_inr(total_exp))
-col_kpi2.metric("Total Warehouses", filtered_df["Locations"].nunique())
-col_kpi3.metric("Total Customers", filtered_df["Customer"].nunique())
+
+with col_kpi1:
+    st.markdown(f"""
+        <div style="background-color: #ffffff; border: 1px solid #e0e0e0; border-radius: 8px; padding: 10px 15px;">
+            <span style="font-size: 14px; color: #555555;">Total Expense</span>
+            <div style="font-size: 28px; font-weight: bold; color: #1f1f1f; margin-top: 2px;">{format_inr(total_exp)}</div>
+            <div style="font-size: 13px; font-weight: 600; color: {delta_color_style}; margin-top: 4px;">
+                {delta_text}
+            </div>
+        </div>
+    """, unsafe_allow_html=True)
+
+with col_kpi2:
+    st.metric("Total Warehouses", filtered_df["Locations"].nunique() if not filtered_df.empty else 0)
+
+with col_kpi3:
+    st.metric("Total Customers", filtered_df["Customer"].nunique() if not filtered_df.empty else 0)
 
 st.markdown("---")
 
