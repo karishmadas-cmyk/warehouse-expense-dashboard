@@ -432,7 +432,7 @@ else:
     col5, col6 = st.columns([1, 1])
 
     with col5:
-        st.subheader("🏬 Top Warehouses by Expense")
+        st.subheader("🏬 Top 10 Warehouses")
 
         loc_sum = (
             filtered_df
@@ -443,7 +443,7 @@ else:
                 "Total Expenses",
                 ascending=True
             )
-            .tail(7)
+            .tail(10)
         )
 
         loc_sum["Expense_Cr"] = (
