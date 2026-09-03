@@ -15,17 +15,17 @@ st.set_page_config(
 # -----------------------------------------------------------------------------
 MONTHLY_BUDGETS = {
     "April": 7.14e7,     # ₹7.14 Cr
-    "May": 6.8e4,        # ₹6.84 Cr
-    "June": 7.1e3,       # ₹7.13 Cr
-    "July": 7.4e8,      # ₹7.48 Cr
-    "August": 7.4e5,     # ₹7.45 Cr
-    "September": 7.4e8,  # ₹7.48 Cr
-    "October": 7.9e8,    # ₹7.98 Cr
-    "November": 7.8e9,   # ₹7.89 Cr
-    "December": 8.4e8,   # ₹8.48 Cr
-    "January": 8.7e3,    # ₹8.73 Cr
-    "February": 8.8e2,   # ₹8.82 Cr
-    "March": 9.6e8       # ₹9.68 Cr
+    "May": 6.84e7,        # ₹6.84 Cr
+    "June": 7.13e7,       # ₹7.13 Cr
+    "July": 7.48e7,      # ₹7.48 Cr
+    "August": 7.45e7,     # ₹7.45 Cr
+    "September": 7.48e7,  # ₹7.48 Cr
+    "October": 7.98e7,    # ₹7.98 Cr
+    "November": 7.89e7,   # ₹7.89 Cr
+    "December": 8.48e7,   # ₹8.48 Cr
+    "January": 8.73e7,    # ₹8.73 Cr
+    "February": 8.82e7,   # ₹8.82 Cr
+    "March": 9.68e7       # ₹9.68 Cr
 }
 
 
