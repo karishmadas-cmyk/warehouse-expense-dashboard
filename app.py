@@ -242,7 +242,7 @@ else:
         fig1.update_yaxes(
     title_text="Expense (₹ Cr)",
     ticksuffix=" Cr",
-    range=[0, 7],
+    range=[1, 7],
     dtick=1
 )
 
