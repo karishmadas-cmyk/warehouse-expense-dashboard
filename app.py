@@ -240,9 +240,11 @@ else:
         )
 
         fig1.update_yaxes(
-            title_text="Expense (₹ Cr)",
-            ticksuffix=" Cr"
-        )
+    title_text="Expense (₹ Cr)",
+    ticksuffix=" Cr",
+    range=[0, 7],
+    dtick=1
+)
 
         fig1.update_traces(
             textposition="top center",
