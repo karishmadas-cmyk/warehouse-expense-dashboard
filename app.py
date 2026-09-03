@@ -375,7 +375,7 @@ else:
         )
 
     with col4:
-        st.subheader("👥 Top 10 Customers by Expense")
+        st.subheader("👥 Top 10 Customers")
 
         cust_sum = (
             filtered_df
