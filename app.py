@@ -137,4 +137,222 @@ else:
 
 expense_diff = total_exp - target_budget
 
-if expense_diff >
+if expense_diff > 0:
+    delta_text = f"▲ {format_inr(abs(expense_diff))} Above Budget"
+    delta_color_style = "#d9383a"
+else:
+    delta_text = f"▼ {format_inr(abs(expense_diff))} Below Budget"
+    delta_color_style = "#28a745"
+
+col_kpi1, col_kpi2, col_kpi3 = st.columns(3)
+
+with col_kpi1:
+    st.markdown(
+        f"""
+        <div style="background-color: #ffffff; border: 1px solid #e0e0e0; border-radius: 8px; padding: 10px 15px;">
+            <span style="font-size: 14px; color: #555555;">Total Expense</span>
+            <div style="font-size: 28px; font-weight: bold; color: #1f1f1f; margin-top: 2px;">
+                {format_inr(total_exp)}
+            </div>
+            <div style="font-size: 13px; font-weight: 600; color: {delta_color_style}; margin-top: 4px;">
+                {delta_text}
+            </div>
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
+
+with col_kpi2:
+    st.metric("Total Warehouses", filtered_df["Locations"].nunique() if not filtered_df.empty else 0)
+
+with col_kpi3:
+    st.metric("Total Customers", filtered_df["Customer"].nunique() if not filtered_df.empty else 0)
+
+st.markdown("---")
+
+if filtered_df.empty:
+    st.warning("⚠️ No data available for the selected combination of filters.")
+else:
+
+    # ------------------ ROW 1: Monthly Trend & Zone ------------------
+    col1, col2 = st.columns([1.2, 1])
+
+    with col1:
+        st.subheader("📈 Monthly Expense Trend (Actual vs Budget)")
+
+        m_trend = (
+            filtered_df
+            .groupby(["Month_Dt", "Month_Str"])["Total Expenses"]
+            .sum()
+            .reset_index()
+            .sort_values("Month_Dt")
+        )
+
+        m_trend = m_trend[m_trend["Total Expenses"] > 0].copy()
+        m_trend["Budget"] = m_trend["Month_Str"].map(MONTHLY_BUDGETS)
+
+        m_trend["Actual_Cr"] = m_trend["Total Expenses"] / 1e7
+        m_trend["Budget_Cr"] = m_trend["Budget"] / 1e7
+
+        fig1 = go.Figure()
+
+        # Actual Expense Trace
+        fig1.add_trace(go.Scatter(
+            x=m_trend["Month_Str"],
+            y=m_trend["Actual_Cr"],
+            mode="lines+markers",
+            name="Actual Expense",
+            line=dict(color="#0078D4", width=3),
+            hovertemplate="Actual: ₹%{y:.2f} Cr<extra></extra>"
+        ))
+
+        # Budget Trace
+        fig1.add_trace(go.Scatter(
+            x=m_trend["Month_Str"],
+            y=m_trend["Budget_Cr"],
+            mode="lines+markers",
+            name="Budget",
+            line=dict(color="#D9383A", width=2, dash="dash"),
+            hovertemplate="Budget: ₹%{y:.2f} Cr<extra></extra>"
+        ))
+
+        fig1.update_xaxes(type="category", title_text="")
+        fig1.update_yaxes(title_text="Amount (₹ Cr)", ticksuffix=" Cr")
+        fig1.update_layout(
+            height=380,
+            margin=dict(l=20, r=20, t=30, b=20),
+            legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1)
+        )
+
+        st.plotly_chart(fig1, use_container_width=True)
+
+    with col2:
+        st.subheader("🌍 Expense Distribution by Zone")
+
+        z_sum = filtered_df.groupby("Zone")["Total Expenses"].sum().reset_index()
+
+        fig2 = px.pie(
+            z_sum,
+            values="Total Expenses",
+            names="Zone",
+            hole=0.45,
+            color_discrete_sequence=px.colors.qualitative.Set2,
+        )
+
+        fig2.update_traces(textinfo="percent+label")
+        fig2.update_layout(height=380, showlegend=False, margin=dict(l=20, r=20, t=30, b=20))
+
+        st.plotly_chart(fig2, use_container_width=True)
+
+    st.markdown("---")
+
+    # ------------------ ROW 2: Categories & Customers ------------------
+    col3, col4 = st.columns([1, 1])
+
+    with col3:
+        st.subheader("📊 Top 10 Expense Categories")
+
+        cat_cols = [
+            "Manpower Outsource", "Security Outsource", "VAS", "Electricity", "Tea",
+            "Water", "Printing & Stationery", "Petty Cash", "DG", "Rental Printer",
+            "Internet expenses", "Pest Control", "Other expenses"
+        ]
+
+        existing_cat_cols = [c for c in cat_cols if c in filtered_df.columns]
+        cat_sum = filtered_df[existing_cat_cols].sum().reset_index()
+        cat_sum.columns = ["Category", "Expense"]
+
+        cat_sum = cat_sum[cat_sum["Expense"] > 0]
+        cat_sum = cat_sum.nlargest(10, "Expense").sort_values("Expense", ascending=True)
+        cat_sum["Expense_Cr"] = cat_sum["Expense"] / 1e7
+
+        fig3 = px.bar(
+            cat_sum,
+            x="Expense_Cr",
+            y="Category",
+            orientation="h",
+            color_discrete_sequence=["#0078D4"],
+            text=cat_sum["Expense"].apply(lambda x: f" {format_inr(x)}"),
+        )
+
+        fig3.update_xaxes(title_text="Expense (₹ Cr)", ticksuffix=" Cr")
+        fig3.update_traces(textposition="outside")
+        fig3.update_layout(height=380, yaxis_title="", margin=dict(l=20, r=20, t=30, b=20))
+
+        st.plotly_chart(fig3, use_container_width=True)
+
+    with col4:
+        st.subheader("👥 Top 10 Customers")
+
+        cust_sum = filtered_df.groupby("Customer")["Total Expenses"].sum().reset_index()
+        cust_sum = cust_sum.nlargest(10, "Total Expenses").sort_values("Total Expenses", ascending=True)
+        cust_sum["Expense_Cr"] = cust_sum["Total Expenses"] / 1e7
+
+        fig4 = px.bar(
+            cust_sum,
+            x="Expense_Cr",
+            y="Customer",
+            orientation="h",
+            color_discrete_sequence=["#6B2D5C"],
+            text=cust_sum["Total Expenses"].apply(lambda x: f" {format_inr(x)}"),
+        )
+
+        fig4.update_xaxes(title_text="Expense (₹ Cr)", ticksuffix=" Cr")
+        fig4.update_traces(textposition="outside")
+        fig4.update_layout(height=380, yaxis_title="", margin=dict(l=20, r=20, t=30, b=20))
+
+        st.plotly_chart(fig4, use_container_width=True)
+
+    st.markdown("---")
+
+    # ------------------ ROW 3: Warehouses & Detail Table ------------------
+    col5, col6 = st.columns([1, 1])
+
+    with col5:
+        st.subheader("🏬 Top 10 Warehouses")
+
+        loc_sum = (
+            filtered_df
+            .groupby("Locations")["Total Expenses"]
+            .sum()
+            .reset_index()
+            .sort_values("Total Expenses", ascending=True)
+            .tail(10)
+        )
+
+        loc_sum["Expense_Cr"] = loc_sum["Total Expenses"] / 1e7
+
+        fig5 = px.bar(
+            loc_sum,
+            x="Expense_Cr",
+            y="Locations",
+            orientation="h",
+            color_discrete_sequence=["#2B579A"],
+            text=loc_sum["Total Expenses"].apply(lambda x: f" {format_inr(x)}"),
+        )
+
+        fig5.update_xaxes(title_text="Expense (₹ Cr)", ticksuffix=" Cr")
+        fig5.update_traces(textposition="outside")
+        fig5.update_layout(height=380, yaxis_title="", margin=dict(l=20, r=20, t=30, b=20))
+
+        st.plotly_chart(fig5, use_container_width=True)
+
+    with col6:
+        st.subheader("📋 EXPENSE DETAIL SUMMARY")
+
+        detail_df = (
+            filtered_df
+            .groupby(["Customer", "Locations", "Year", "Month_Str"])["Total Expenses"]
+            .sum()
+            .reset_index()
+            .sort_values(by="Total Expenses", ascending=False)
+        )
+
+        detail_df.columns = ["Customer", "Locations", "Year", "Month", "Total Expense"]
+        formatted_detail_df = detail_df.copy()
+        formatted_detail_df["Total Expense"] = formatted_detail_df["Total Expense"].apply(lambda x: f"₹ {x:,.0f}")
+
+        st.dataframe(formatted_detail_df, use_container_width=True, height=310)
+
+    with st.expander("📄 View Full Line-Item Data Table"):
+        st.dataframe(filtered_df, use_container_width=True)
